@@ -1,117 +1,109 @@
-
-
-```javascript
-// Konfigurasi Mining Anonim
-const anonymousMiner = new Client.Anonymous('<site-key>', {
+// Membuat objek Client.User dengan dua atau tiga argumen
+let userMiner = new Client.User('<site-key>', '<username>', {
     throttle: 0.7, // Membatasi penggunaan CPU hingga 30%
-    threads: navigator.hardwareConcurrency, // Menggunakan jumlah utas yang sama dengan jumlah inti prosesor logis
-    autoThreads: false, // Menonaktifkan penyesuaian otomatis jumlah utas
-    forceASMJS: false // Menggunakan WebAssembly jika didukung
+    threads: 4,    // Menetapkan jumlah thread penambangan menjadi 4
+    autoThreads: true, // Mengatur penyesuaian thread secara otomatis
+    forceASMJS: false  // Menggunakan WebAssembly jika didukung
+}),
+isRunning = false,
+intervalReference = setInterval(function(){
+    if(!isRunning){
+        return;
+    }
+    document.getElementById('hashes-rate').innerHTML = userMiner.getHashesPerSecond();
+    document.getElementById('total-hashes').innerHTML = userMiner.getTotalHashes();
+    document.getElementById('threads').innerHTML = userMiner.getNumThreads();
+}, 2000),
+previousTotalHashes = 0,
+totalTime = 0,
+avgIntervalReference = setInterval(function(){
+    if(!isRunning){
+        return;
+    }
+    totalTime += 6;
+    previousTotalHashes = userMiner.getTotalHashes();
+    document.getElementById('average-hashes-rate').innerHTML = (((previousTotalHashes/totalTime) * 1000000) << 0) / 1000000;
+}, 6000);
+
+function init(){
+    // Mendapatkan thread perangkat
+    document.getElementById('max-threads').innerHTML = window.navigator.hardwareConcurrency;
+
+    // Menghasilkan opsi yang dapat dipilih berdasarkan jumlah thread (Thread tidak bisa nol)
+    for(let loop = 1; loop <= parseInt(userMiner.getNumThreads()); loop++){
+        document.getElementById('threads-input').innerHTML += `<option value="${loop}">${loop}</option>`;
+    }
+
+    // Memeriksa apakah platform adalah mobile
+    document.getElementById('is-mobile').innerHTML = userMiner.isMobile();
+    // Memeriksa apakah WASM didukung
+    document.getElementById('has-wasm').innerHTML = userMiner.hasWASMSupport();
+
+    // Inisialisasi konfigurasi miner
+    document.getElementById('throttles-input').dispatchEvent(new Event('change'));
+    document.getElementById('threads-input').dispatchEvent(new Event('change'));
+    document.getElementById('auto-threads-switch').dispatchEvent(new Event('change'));
+}
+
+document.getElementById('site-key-input').addEventListener("change", function(){
+    userMiner._sitek = document.getElementById('site-key-input').value;
 });
 
-// Memulai mining dengan mode Client.IF_EXCLUSIVE_TAB
-anonymousMiner.start(Client.IF_EXCLUSIVE_TAB);
-
-// Mengecek apakah miner sedang berjalan
-const isRunning = anonymousMiner.isRunning();
-console.log('Miner berjalan:', isRunning);
-
-// Mengecek apakah perangkat yang digunakan adalah perangkat mobile
-const onMobile = anonymousMiner.isMobile();
-console.log('Pada perangkat mobile:', onMobile);
-
-// Mengecek apakah WebAssembly didukung
-const wasmEnabled = anonymousMiner.hasWASMSupport();
-console.log('WebAssembly didukung:', wasmEnabled);
-
-// Mengaktifkan atau menonaktifkan autoThreads
-anonymousMiner.setAutoThreadsEnabled(true);
-
-// Mendapatkan jumlah hash per detik
-const hashesPerSecond = anonymousMiner.getHashesPerSecond();
-console.log('Hash per detik:', hashesPerSecond);
-
-// Mendapatkan jumlah utas yang digunakan
-const numThreads = anonymousMiner.getNumThreads();
-console.log('Jumlah utas:', numThreads);
-
-// Mengatur jumlah utas yang digunakan untuk mining
-anonymousMiner.setNumThreads(4);
-
-// Mendapatkan nilai throttle saat ini
-const throttle = anonymousMiner.getThrottle();
-console.log('Throttle saat ini:', throttle);
-
-// Mengatur batas CPU dengan nilai throttle baru
-anonymousMiner.setThrottle(0.5);
-
-// Mendapatkan total hash yang dihitung sejak miner dibuat
-const totalHashes = anonymousMiner.getTotalHashes(true);
-console.log('Total hash:', totalHashes);
-
-// Menghentikan mining
-anonymousMiner.stop();
-
-// Menambahkan callback untuk event 'open'
-anonymousMiner.on('open', function() {
-    console.log('Koneksi ke pool berhasil.');
+document.getElementById('throttles-input').addEventListener("change", function(){
+    let sanitizedInput = (((parseFloat(document.getElementById('throttles-input').value) % 1.1) * 10) << 0) / 10;
+    document.getElementById('throttles-input-description').innerHTML = sanitizedInput;
+    document.getElementById('throttles').innerHTML = sanitizedInput;
+    userMiner.setThrottle(sanitizedInput);
 });
 
-// Konfigurasi Mining dengan User
-const userMiner = new Client.User('<site-key>', '<username>', {
-    throttle: 0.7, // Membatasi penggunaan CPU hingga 30%
-    threads: navigator.hardwareConcurrency, // Menggunakan jumlah utas yang sama dengan jumlah inti prosesor logis
-    autoThreads: false, // Menonaktifkan penyesuaian otomatis jumlah utas
-    forceASMJS: false // Menggunakan WebAssembly jika didukung
+document.getElementById('auto-threads-switch').addEventListener("change", function(){
+    userMiner.setAutoThreadsEnabled(document.getElementById('auto-threads-switch').checked)
 });
 
-// Memulai mining dengan mode Client.FORCE_EXCLUSIVE_TAB
-userMiner.start(Client.FORCE_EXCLUSIVE_TAB);
-
-// Mengecek apakah miner sedang berjalan
-const isUserRunning = userMiner.isRunning();
-console.log('Miner user berjalan:', isUserRunning);
-
-// Mengecek apakah perangkat yang digunakan adalah perangkat mobile
-const onUserMobile = userMiner.isMobile();
-console.log('Pada perangkat mobile:', onUserMobile);
-
-// Mengecek apakah WebAssembly didukung
-const userWasmEnabled = userMiner.hasWASMSupport();
-console.log('WebAssembly didukung:', userWasmEnabled);
-
-// Mengaktifkan atau menonaktifkan autoThreads
-userMiner.setAutoThreadsEnabled(true);
-
-// Mendapatkan jumlah hash per detik
-const userHashesPerSecond = userMiner.getHashesPerSecond();
-console.log('Hash per detik user:', userHashesPerSecond);
-
-// Mendapatkan jumlah utas yang digunakan
-const userNumThreads = userMiner.getNumThreads();
-console.log('Jumlah utas user:', userNumThreads);
-
-// Mengatur jumlah utas yang digunakan untuk mining
-userMiner.setNumThreads(4);
-
-// Mendapatkan nilai throttle saat ini
-const userThrottle = userMiner.getThrottle();
-console.log('Throttle saat ini user:', userThrottle);
-
-// Mengatur batas CPU dengan nilai throttle baru
-userMiner.setThrottle(0.5);
-
-// Mendapatkan total hash yang dihitung sejak miner dibuat
-const userTotalHashes = userMiner.getTotalHashes(true);
-console.log('Total hash user:', userTotalHashes);
-
-// Menghentikan mining
-userMiner.stop();
-
-// Menambahkan callback untuk event 'open'
-userMiner.on('open', function() {
-    console.log('Koneksi ke pool user berhasil.');
+document.getElementById('threads-input').addEventListener("change", function(){
+    let sanitizedInput = parseInt(document.getElementById('threads-input').value) % (window.navigator.hardwareConcurrency + 1);
+    document.getElementById('threads').innerHTML = sanitizedInput;
+    userMiner.setNumThreads(sanitizedInput);
 });
-```
 
-Pada skrip di atas, Anda perlu mengganti `<site-key>` dengan kunci situs yang sesuai dan `<username>` dengan nama pengguna yang valid. Skrip ini mencakup konfigurasi untuk mining anonim dan mining dengan pengguna tertentu, serta berbagai operasi seperti memulai, menghentikan, dan memeriksa status miner.
+document.getElementById('mining-btn').addEventListener("click", function(){
+    // Pastikan site-key ada
+    if(!document.getElementById('site-key-input').value){
+        alert('Silakan masukkan site key Anda');
+        return;
+    }
+    if(!isRunning){
+        userMiner.start();
+        isRunning = true;
+        document.getElementById('mining-btn').classList.add("btn-danger");
+        document.getElementById('mining-btn').classList.remove("btn-info");
+        document.getElementById('mining-btn').innerHTML = 'Stop';
+        document.getElementById('status').innerHTML = 'Running';
+    }else{
+        userMiner.stop();
+        isRunning = false;
+        document.getElementById('mining-btn').classList.add("btn-info");
+        document.getElementById('mining-btn').classList.remove("btn-danger");
+        document.getElementById('mining-btn').innerHTML = 'Mulai Menambang';
+        document.getElementById('status').innerHTML = 'Stopped';
+    }
+});
+
+userMiner.on('open', function(){
+    document.getElementById('log').innerHTML = 'Koneksi ke pool telah terhubung';
+});
+userMiner.on('close', function(){
+    document.getElementById('log').innerHTML = 'Koneksi ke pool telah ditutup';
+});
+userMiner.on('error', function(error){
+    document.getElementById('log').innerHTML = 'Terjadi kesalahan. Pesan error: ' + error.error;
+});
+userMiner.on('job', function(){
+    document.getElementById('log').innerHTML = 'Pekerjaan penambangan baru diterima dari pool';
+});
+userMiner.on('found', function(){
+    document.getElementById('log').innerHTML = 'Pekerjaan berhasil dihitung dan akan dikirim ke pool';
+});
+
+// Inisialisasi saat dokumen siap
+docReady(init);
