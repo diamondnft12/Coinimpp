@@ -3,15 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CoinIMP API Example</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Statistik Hashes CoinIMP</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .hashes {
+            font-size: 24px;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <h1>CoinIMP Hashes</h1>
-        <button id="fetchData">Fetch Data</button>
-        <pre id="output"></pre>
+        <h1>Statistik Hashes CoinIMP</h1>
+        <?php if (isset($hashes)): ?>
+            <div class="hashes">
+                <p>Jumlah hashes yang Anda dapat gunakan: <?php echo $hashes; ?></p>
+            </div>
+        <?php else: ?>
+            <p>Gagal mengambil data dari API CoinIMP.</p>
+        <?php endif; ?>
     </div>
-    <script src="script.js"></script>
 </body>
 </html>
